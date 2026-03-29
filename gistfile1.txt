@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Virality Index | Dormant → Viral</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0a0a0f 0%, #12121a 100%);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 12px;
+            touch-action: pan-y pinch-zoom;
+        }
+        
+        @import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap');
+        
+        .app {
+            max-width: 100%;
+            width: 100%;
+            background: rgba(15, 15, 20, 0.8);
+            backdrop-filter: blur(2px);
+            border-radius: 32px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+        
+        .header {
+            padding: 18px 20px;
+            background: linear-gradient(135deg, rgba(20, 20, 28, 0.95), rgba(15, 15, 20, 0.95));
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        
+        .title-section h1 {
+            background: linear-gradient(135deg, #fff, #ffb87a);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-size: clamp(20px, 6vw, 26px);
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            margin-bottom: 4px;
+        }
+        
+        .title-section p {
+            color: #8b8b9a;
+            font-size: clamp(10px, 3vw, 12px);
+            font-weight: 400;
+        }
+        
+        .stats-grid {
+            display: flex;
+            gap: clamp(16px, 5vw, 28px);
+            background: rgba(0, 0, 0, 0.4);
+            padding: 10px 20px;
+            border-radius: 60px;
+            backdrop-filter: blur(8px);
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-label {
+            color: #8b8b9a;
+            font-size: clamp(9px, 2.5vw, 11px);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 4px;
+        }
+        
+        .stat-value {
+            background: linear-gradient(135deg, #fff, #e8e8f0);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-size: clamp(18px, 6vw, 26px);
+            font-weight: 700;
+            letter-spacing: -0.3px;
+        }
+        
+        .canvas-container {
+            position: relative;
+            background: #08080c;
+            touch-action: none;
+            cursor: pointer;
+        }
+        
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #08080c;
+            touch-action: none;
+        }
+        
+        .touch-hint {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(12px);
+            padding: 10px 24px;
+            border-radius: 60px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #ffb87a;
+            pointer-events: none;
+            z-index: 10;
+            white-space: nowrap;
+            border: 1px solid rgba(255, 184, 122, 0.4);
+            letter-spacing: 0.5px;
+            font-family: monospace;
+        }
+        
+        .controls {
+            padding: 16px 20px;
+            background: linear-gradient(135deg, rgba(20, 20, 28, 0.95), rgba(15, 15, 20, 0.95));
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        
+        .mode-buttons {
+            display: flex;
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 5px;
+            border-radius: 80px;
+        }
+        
+        .mode-btn {
+            padding: clamp(10px, 3.5vw, 14px) clamp(20px, 6vw, 32px);
+            font-size: clamp(13px, 4vw, 15px);
+            font-weight: 700;
+            background: transparent;
+            border: none;
+            color: #8b8b9a;
+            cursor: pointer;
+            border-radius: 80px;
+            transition: all 0.25s ease;
+            font-family: 'Inter', monospace;
+            letter-spacing: 0.5px;
+            touch-action: manipulation;
+        }
+        
+        .mode-btn:active {
+            transform: scale(0.96);
+        }
+        
+        .mode-btn.active {
+            background: linear-gradient(135deg, #ff6b4a, #ff8c5a);
+            color: white;
+            box-shadow: 0 4px 12px rgba(255, 107, 74, 0.3);
+        }
+        
+        .mode-btn.non-viral.active {
+            background: linear-gradient(135deg, #5a7c9a, #4a6c8a);
+            box-shadow: 0 4px 12px rgba(90, 124, 154, 0.3);
+        }
+        
+        .momentum-card {
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(8px);
+            padding: 8px 20px;
+            border-radius: 80px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: clamp(12px, 3.5vw, 14px);
+            font-weight: 600;
+            color: #ffb87a;
+            border: 1px solid rgba(255, 184, 122, 0.3);
+        }
+        
+        .momentum-value {
+            color: #ffb87a;
+            font-weight: 800;
+            font-size: clamp(18px, 5vw, 24px);
+            margin-left: 6px;
+            text-shadow: 0 0 8px rgba(255, 184, 122, 0.5);
+        }
+        
+        .reset-btn {
+            background: rgba(60, 60, 70, 0.8);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: clamp(8px, 3vw, 12px) clamp(18px, 5vw, 28px);
+            border-radius: 80px;
+            color: #e8e8f0;
+            font-size: clamp(12px, 3.5vw, 13px);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Inter', monospace;
+            touch-action: manipulation;
+        }
+        
+        .reset-btn:active {
+            transform: scale(0.96);
+            background: rgba(80, 80, 90, 0.9);
+        }
+        
+        .instruction {
+            padding: 12px 20px;
+            text-align: center;
+            color: #6b6b7a;
+            font-size: clamp(10px, 2.8vw, 11px);
+            font-weight: 500;
+            background: rgba(0, 0, 0, 0.3);
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
+        }
+        
+        @keyframes fadeUp {
+            0% { opacity: 1; transform: translateY(0px) scale(1); }
+            100% { opacity: 0; transform: translateY(-50px) scale(1.2); }
+        }
+        
+        .floating-points {
+            position: fixed;
+            pointer-events: none;
+            font-size: clamp(14px, 4vw, 18px);
+            font-weight: 800;
+            font-family: 'Inter', monospace;
+            animation: fadeUp 0.6s ease-out forwards;
+            z-index: 2000;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+            white-space: nowrap;
+        }
+        
+        @media (max-width: 600px) {
+            body {
+                padding: 8px;
+            }
+            
+            .header, .controls {
+                padding: 12px 16px;
+            }
+            
+            .stats-grid {
+                padding: 6px 14px;
+            }
+            
+            .touch-hint {
+                font-size: 11px;
+                padding: 8px 18px;
+                bottom: 16px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .mode-btn {
+                padding: 8px 16px;
+            }
+            
+            .momentum-card {
+                padding: 6px 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <div class="header">
+            <div class="title-section">
+                <h1>VIRALITY INDEX</h1>
+                <p>dormant → viral momentum</p>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-label">CONVERTED</div>
+                    <div class="stat-value" id="convertedCount">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">REACH</div>
+                    <div class="stat-value" id="reachPercent">0%</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">INFLUENCE</div>
+                    <div class="stat-value" id="totalScore">0</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="canvas-container">
+            <canvas id="canvas"></canvas>
+            <div class="touch-hint" id="touchHint">
+                👆 TAP ANYWHERE TO ENGAGE
+            </div>
+        </div>
+        
+        <div class="controls">
+            <div class="mode-buttons">
+                <button id="nonViralBtn" class="mode-btn non-viral active">STANDARD</button>
+                <button id="viralBtn" class="mode-btn viral">🔥 VIRAL</button>
+            </div>
+            
+            <div class="momentum-card">
+                ⚡ MOMENTUM <span class="momentum-value" id="momentumValue">0</span>
+            </div>
+            
+            <button id="resetBtn" class="reset-btn">⟳ RESET</button>
+        </div>
+        <div class="instruction">
+            TAP FASTER = MORE MOMENTUM → WIDER REACH → FASTER CONVERSION
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            console.log("Initializing Virality Index...");
+            
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            let canvasWidth = 0;
+            let canvasHeight = 0;
+            
+            // VIBRANT COLOR PALETTES
+            const DORMANT_PALETTE = [
+                [70, 90, 120],   // muted indigo
+                [90, 80, 105],   // muted purple
+                [80, 100, 90],   // muted teal
+                [110, 80, 85],   // muted rose
+                [75, 95, 105],   // muted blue
+                [100, 75, 90],   // muted mauve
+            ];
+            
+            const VIRAL_PALETTE = [
+                [255, 100, 80],   // vibrant coral
+                [80, 220, 180],   // electric mint
+                [255, 180, 70],   // golden orange
+                [70, 200, 255],   // bright cyan
+                [255, 120, 160],  // hot pink
+                [160, 130, 255],  // vibrant lavender
+            ];
+            
+            let gameState = {
+                influence: 0,
+                currentMode: 'nonViral',
+                momentum: 0,
+                lastClickTime: 0,
+                viralStreak: 0
+            };
+            
+            class Node {
+                constructor(x, y, paletteIdx) {
+                    this.x = x;
+                    this.y = y;
+                    this.paletteIdx = paletteIdx;
+                    this.dormantColor = [...DORMANT_PALETTE[paletteIdx % DORMANT_PALETTE.length]];
+                    this.viralColor = [...VIRAL_PALETTE[paletteIdx % VIRAL_PALETTE.length]];
+                    this.currentColor = [...this.dormantColor];
+                    this.isConverted = false;
+                    this.progress = 0;
+                    this.vx = (Math.random() - 0.5) * 0.2;
+                    this.vy = (Math.random() - 0.5) * 0.2;
+                    this.size = 3 + Math.random() * 2.5;
+                }
+                
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
+                    
+                    if (this.x < -20) this.x = canvasWidth + 20;
+                    if (this.x > canvasWidth + 20) this.x = -20;
+                    if (this.y < -20) this.y = canvasHeight + 20;
+                    if (this.y > canvasHeight + 20) this.y = -20;
+                }
+                
+                applyConversion(intensity) {
+                    if (!this.isConverted) {
+                        this.progress += intensity;
+                        if (this.progress >= 1) {
+                            this.isConverted = true;
+                            this.progress = 1;
+                        }
+                        
+                        // Smooth color transition
+                        const t = Math.pow(this.progress, 1.2);
+                        this.currentColor[0] = Math.floor(this.dormantColor[0] * (1 - t) + this.viralColor[0] * t);
+                        this.currentColor[1] = Math.floor(this.dormantColor[1] * (1 - t) + this.viralColor[1] * t);
+                        this.currentColor[2] = Math.floor(this.dormantColor[2] * (1 - t) + this.viralColor[2] * t);
+                        
+                        return this.progress >= 1;
+                    }
+                    return false;
+                }
+                
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    
+                    const alpha = this.isConverted ? 0.95 : 0.7;
+                    ctx.fillStyle = `rgba(${this.currentColor[0]}, ${this.currentColor[1]}, ${this.currentColor[2]}, ${alpha})`;
+                    ctx.fill();
+                    
+                    // Glow for viral nodes
+                    if (this.isConverted) {
+                        ctx.shadowBlur = 10;
+                        ctx.shadowColor = `rgba(${this.currentColor[0]}, ${this.currentColor[1]}, ${this.currentColor[2]}, 0.5)`;
+                        ctx.fill();
+                        ctx.shadowBlur = 0;
+                    }
+                    
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${this.isConverted ? 0.3 : 0.15})`;
+                    ctx.lineWidth = 0.8;
+                    ctx.stroke();
+                    
+                    // Progress ring
+                    if (!this.isConverted && this.progress > 0) {
+                        ctx.beginPath();
+                        ctx.arc(this.x, this.y, this.size + 2.5, 0, Math.PI * 2 * this.progress);
+                        ctx.strokeStyle = `rgba(255, 200, 100, 0.9)`;
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                    }
+                }
+            }
+            
+            let nodes = [];
+            let ripples = [];
+            let circles = [];
+            let markers = [];
+            
+            function initNodes(count) {
+                nodes = [];
+                for (let i = 0; i < count; i++) {
+                    nodes.push(new Node(
+                        Math.random() * canvasWidth,
+                        Math.random() * canvasHeight,
+                        Math.floor(Math.random() * 8)
+                    ));
+                }
+            }
+            
+            function resizeCanvas() {
+                const container = canvas.parentElement;
+                const maxWidth = Math.min(window.innerWidth - 24, 1000);
+                const aspectRatio = 0.6;
+                
+                canvasWidth = maxWidth;
+                canvasHeight = canvasWidth * aspectRatio;
+                
+                canvas.width = canvasWidth;
+                canvas.height = canvasHeight;
+                canvas.style.width = `${canvasWidth}px`;
+                canvas.style.height = `${canvasHeight}px`;
+                
+                const nodeCount = Math.floor(canvasWidth * canvasHeight / 2000);
+                initNodes(nodeCount);
+            }
+            
+            function updateUI() {
+                const converted = nodes.filter(n => n.isConverted).length;
+                const total = nodes.length;
+                const percent = total > 0 ? Math.floor((converted / total) * 100) : 0;
+                
+                document.getElementById('convertedCount').innerHTML = `${converted}<span style="font-size:11px; color:#8b8b9a;">/${total}</span>`;
+                document.getElementById('reachPercent').innerHTML = `${percent}%`;
+                document.getElementById('totalScore').innerHTML = gameState.influence;
+                
+                const momentumEl = document.getElementById('momentumValue');
+                momentumEl.innerHTML = gameState.momentum;
+            }
+            
+            function showFloatingPoints(x, y, points, isViral) {
+                const pointsDiv = document.createElement('div');
+                pointsDiv.className = 'floating-points';
+                pointsDiv.textContent = `+${points}`;
+                pointsDiv.style.left = `${x + canvas.getBoundingClientRect().left}px`;
+                pointsDiv.style.top = `${y + canvas.getBoundingClientRect().top - 15}px`;
+                pointsDiv.style.color = isViral ? '#ffb87a' : '#ffb87a';
+                document.body.appendChild(pointsDiv);
+                setTimeout(() => pointsDiv.remove(), 600);
+            }
+            
+            function processEngagement(x, y) {
+                const now = Date.now();
+                if (now - gameState.lastClickTime < 900) {
+                    gameState.momentum++;
+                    if (gameState.currentMode === 'viral') {
+                        gameState.viralStreak++;
+                    }
+                } else {
+                    gameState.momentum = 1;
+                    gameState.viralStreak = gameState.currentMode === 'viral' ? 1 : 0;
+                }
+                gameState.lastClickTime = now;
+                
+                // Dynamic radius
+                let radius = gameState.currentMode === 'viral' ? 85 : 45;
+                if (gameState.currentMode === 'viral') {
+                    const bonus = Math.min(90, Math.floor(gameState.viralStreak / 2) * 7);
+                    radius += bonus;
+                }
+                
+                // Conversion intensity
+                let intensity = gameState.currentMode === 'viral' ? 
+                    0.4 + Math.min(0.35, Math.floor(gameState.viralStreak / 4) * 0.05) : 0.18;
+                
+                let newlyConverted = 0;
+                
+                nodes.forEach(node => {
+                    const dx = node.x - x;
+                    const dy = node.y - y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < radius) {
+                        const completed = node.applyConversion(intensity);
+                        if (completed) newlyConverted++;
+                    }
+                });
+                
+                const pointsPerConversion = gameState.currentMode === 'viral' ? 5 : 2;
+                const pointsEarned = newlyConverted * pointsPerConversion;
+                gameState.influence += pointsEarned;
+                
+                // Visual effects - WHITE CIRCLES
+                ripples.push({ x, y, r: 5, maxR: radius, alpha: 0.7 });
+                circles.push({ x, y, radius: radius, alpha: 0.6, mode: gameState.currentMode });
+                markers.push({ x, y, size: 3, alpha: 0.8 });
+                
+                if (pointsEarned > 0) {
+                    showFloatingPoints(x, y, pointsEarned, gameState.currentMode === 'viral');
+                }
+                
+                // Haptic feedback
+                if (window.navigator && window.navigator.vibrate) {
+                    window.navigator.vibrate(10);
+                }
+                
+                updateUI();
+            }
+            
+            // DRAWING FUNCTIONS - WHITE CIRCLE FRAMES
+            function drawCircleFrames() {
+                for (let i = circles.length - 1; i >= 0; i--) {
+                    const c = circles[i];
+                    
+                    // Main outer ring - WHITE
+                    ctx.beginPath();
+                    ctx.arc(c.x, c.y, c.radius, 0, Math.PI * 2);
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${c.alpha * 0.8})`;
+                    ctx.lineWidth = 2.5;
+                    ctx.stroke();
+                    
+                    // Inner ring - WHITE with glow
+                    ctx.beginPath();
+                    ctx.arc(c.x, c.y, c.radius * 0.7, 0, Math.PI * 2);
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${c.alpha * 0.5})`;
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                    
+                    // Add a subtle glow
+                    ctx.shadowBlur = 8;
+                    ctx.shadowColor = `rgba(255, 255, 255, ${c.alpha * 0.3})`;
+                    ctx.beginPath();
+                    ctx.arc(c.x, c.y, c.radius, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.shadowBlur = 0;
+                    
+                    c.alpha -= 0.012;
+                    if (c.alpha <= 0) circles.splice(i, 1);
+                }
+            }
+            
+            function drawRipples() {
+                for (let i = ripples.length - 1; i >= 0; i--) {
+                    const r = ripples[i];
+                    ctx.beginPath();
+                    ctx.arc(r.x, r.y, r.r, 0, Math.PI * 2);
+                    ctx.strokeStyle = `rgba(255, 220, 150, ${r.alpha})`;
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    r.r += 3.8;
+                    r.alpha -= 0.02;
+                    if (r.r > r.maxR || r.alpha <= 0) ripples.splice(i, 1);
+                }
+            }
+            
+            function drawMarkers() {
+                for (let i = markers.length - 1; i >= 0; i--) {
+                    const m = markers[i];
+                    ctx.beginPath();
+                    ctx.arc(m.x, m.y, m.size, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(255, 220, 150, ${m.alpha * 0.7})`;
+                    ctx.fill();
+                    m.size += 1.8;
+                    m.alpha -= 0.05;
+                    if (m.alpha <= 0) markers.splice(i, 1);
+                }
+            }
+            
+            function drawBackground() {
+                const gradient = ctx.createLinearGradient(0, 0, canvasWidth, canvasHeight);
+                gradient.addColorStop(0, '#08080c');
+                gradient.addColorStop(1, '#0c0c14');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+            }
+            
+            function animate() {
+                if (!canvasWidth || !canvasHeight) {
+                    requestAnimationFrame(animate);
+                    return;
+                }
+                
+                nodes.forEach(node => node.update());
+                
+                drawBackground();
+                nodes.forEach(node => node.draw());
+                drawCircleFrames();
+                drawRipples();
+                drawMarkers();
+                
+                requestAnimationFrame(animate);
+            }
+            
+            // MOBILE-FRIENDLY TOUCH HANDLING
+            let isTouching = false;
+            
+            function handleTap(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                let clientX, clientY;
+                
+                if (e.touches) {
+                    clientX = e.touches[0].clientX;
+                    clientY = e.touches[0].clientY;
+                } else {
+                    clientX = e.clientX;
+                    clientY = e.clientY;
+                }
+                
+                const rect = canvas.getBoundingClientRect();
+                if (!rect) return;
+                
+                // Calculate relative position
+                let x = (clientX - rect.left) * (canvasWidth / rect.width);
+                let y = (clientY - rect.top) * (canvasHeight / rect.height);
+                
+                // Boundary check
+                if (x >= 0 && x <= canvasWidth && y >= 0 && y <= canvasHeight) {
+                    processEngagement(x, y);
+                }
+            }
+            
+            // Touch events with proper handling
+            canvas.addEventListener('touchstart', handleTap, { passive: false });
+            canvas.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+            }, { passive: false });
+            canvas.addEventListener('touchend', (e) => {
+                e.preventDefault();
+            });
+            canvas.addEventListener('mousedown', handleTap);
+            canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+            
+            // Button handlers
+            document.getElementById('nonViralBtn').addEventListener('click', (e) => {
+                gameState.currentMode = 'nonViral';
+                gameState.viralStreak = 0;
+                document.getElementById('nonViralBtn').classList.add('active');
+                document.getElementById('viralBtn').classList.remove('active');
+                updateUI();
+            });
+            
+            document.getElementById('viralBtn').addEventListener('click', (e) => {
+                gameState.currentMode = 'viral';
+                document.getElementById('viralBtn').classList.add('active');
+                document.getElementById('nonViralBtn').classList.remove('active');
+                updateUI();
+            });
+            
+            document.getElementById('resetBtn').addEventListener('click', (e) => {
+                gameState = {
+                    influence: 0,
+                    currentMode: gameState.currentMode,
+                    momentum: 0,
+                    lastClickTime: 0,
+                    viralStreak: 0
+                };
+                initNodes(Math.floor(canvasWidth * canvasHeight / 2000));
+                ripples = [];
+                circles = [];
+                markers = [];
+                updateUI();
+            });
+            
+            // Keyboard support
+            window.addEventListener('keydown', (e) => {
+                if (e.key === '1') {
+                    gameState.currentMode = 'nonViral';
+                    gameState.viralStreak = 0;
+                    document.getElementById('nonViralBtn').classList.add('active');
+                    document.getElementById('viralBtn').classList.remove('active');
+                    updateUI();
+                    e.preventDefault();
+                } else if (e.key === '2') {
+                    gameState.currentMode = 'viral';
+                    document.getElementById('viralBtn').classList.add('active');
+                    document.getElementById('nonViralBtn').classList.remove('active');
+                    updateUI();
+                    e.preventDefault();
+                } else if (e.key === 'r' || e.key === 'R') {
+                    gameState = {
+                        influence: 0,
+                        currentMode: gameState.currentMode,
+                        momentum: 0,
+                        lastClickTime: 0,
+                        viralStreak: 0
+                    };
+                    initNodes(Math.floor(canvasWidth * canvasHeight / 2000));
+                    ripples = [];
+                    circles = [];
+                    markers = [];
+                    updateUI();
+                    e.preventDefault();
+                }
+            });
+            
+            // Hide touch hint after first interaction
+            let hasInteracted = false;
+            function hideHint() {
+                if (!hasInteracted) {
+                    const hint = document.getElementById('touchHint');
+                    hint.style.opacity = '0';
+                    setTimeout(() => {
+                        if (hint) hint.style.display = 'none';
+                    }, 500);
+                    hasInteracted = true;
+                }
+            }
+            
+            canvas.addEventListener('touchstart', hideHint);
+            canvas.addEventListener('mousedown', hideHint);
+            
+            // Initialize
+            window.addEventListener('resize', () => {
+                resizeCanvas();
+                updateUI();
+            });
+            
+            resizeCanvas();
+            animate();
+            updateUI();
+            
+            console.log("Ready! Canvas size:", canvasWidth, "x", canvasHeight);
+        })();
+    </script>
+</body>
+</html>
